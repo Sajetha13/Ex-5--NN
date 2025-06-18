@@ -34,76 +34,50 @@ Step 7: Plot the Input space and Hidden space of RBF NN for XOR classification.
 
 <H3>PROGRAM:</H3>
 
-```
+```py
 import numpy as np
 import matplotlib.pyplot as plt
-def gaussian_rbf(x,landmark,gamma=1):
-return np.exp(-gamma * np.linalg.norm(x-landmark)**2)
-def end_to_end(x1,x2,ys,mu1,mu2):
-from_1 = [gaussian_rbf(i,mu1)for i in zip(x1,x2)]
-from_2 = [gaussian_rbf(i,mu2)for i in zip(x1,x2)]
 
-plt.figure(figsize=(13,5))
-plt.subplot(1,2,1)
-plt.scatter((x1[0] , x1[3]) , (x2[0],x2[3]),label="Class_0")
-plt.scatter((x1[1] , x1[2]) , (x2[1],x2[2]),label="Class_1")
-plt.xlabel("$X1$" , fontsize=15)
-plt.ylabel("$X2$",fontsize=15)
-plt.title("Xor: Linearly Inseparable",fontsize=15)
+def rbf(x, c, g=1): return np.exp(-g * np.linalg.norm(x - c) ** 2)
 
-plt.subplot(1, 2, 2)
-plt.scatter(from_1[0], from_2[0], label="Class_0")
-plt.scatter(from_1[1], from_2[1], label="Class_1")
-plt.scatter(from_1[2], from_2[2], label="Class_1")
-plt.scatter(from_1[3], from_2[3], label="Class_0")
-plt.plot([0, 0.95], [0.95, 0], "k--")
-plt.annotate("Seperating hyperplane", xy=(0.4, 0.55), xytext=(0.55, 0.66),arrowprops =dict(facecolor='black', shrink=0.05))
-plt.xlabel(f"Smul$: ((mu1))", fontsize=15)
-plt.ylabel(f"$mu25: ((mu2))", fontsize=15)
-plt.title("Transformed Inputs: Linearly Seperable", fontsize=15)
-plt.legend()
+def transform_and_train(X, y, c1, c2):
+    phi = np.array([[rbf(x, c1), rbf(x, c2), 1] for x in X])
+    w = np.linalg.pinv(phi).dot(y)
 
-A = []
+    # Plot
+    plt.figure(figsize=(13,5))
+    plt.subplot(1,2,1)
+    plt.scatter(*X[y==0].T, label="Class 0")
+    plt.scatter(*X[y==1].T, label="Class 1")
+    plt.title("XOR: Linearly Inseparable")
+    plt.xlabel("X1"); plt.ylabel("X2"); plt.legend()
 
-for i, j in zip(from_1, from_2):
-  temp = []
-  temp.append(i)
-  temp.append(j)
-  temp.append(1)
-  A.append(temp)
+    plt.subplot(1,2,2)
+    hidden = phi[:, :2]
+    plt.scatter(*hidden[y==0].T, label="Class 0")
+    plt.scatter(*hidden[y==1].T, label="Class 1")
+    plt.plot([0, 1], [1, 0], "k--")
+    plt.title("RBF Transformed: Linearly Separable")
+    plt.xlabel("Φ1"); plt.ylabel("Φ2"); plt.legend()
+    plt.show()
 
-A= np.array (A)
-W = np.linalg.pinv(A).dot(ys)  
-print(np.round(A.dot(W)))
-print('ys')
-print(f"Weights: {W}")
-return W
-def predict_matrix(point, weights):
+    return w
 
-gaussian_rbf_0 = gaussian_rbf(np.array (point), mu1)
+def predict(x, w, c1, c2):
+    return round(w.dot([rbf(x, c1), rbf(x, c2), 1]))
 
-gaussian_rbf_1 = gaussian_rbf(np.array(point), mu2)
+# Data & centers
+X = np.array([[0,0], [0,1], [1,0], [1,1]])
+y = np.array([0, 1, 1, 0])
+c1, c2 = np.array([0,1]), np.array([1,0])
 
-A = np.array([gaussian_rbf_0, gaussian_rbf_1, 1])
+# Train
+weights = transform_and_train(X, y, c1, c2)
 
-return np.round(A.dot(weights))
-#points
+# Test
+for point in X:
+    print(f"Input: {point}, Predicted: {predict(point, weights, c1, c2)}")
 
-x1= np.array([0, 0, 1, 1])
-x2= np.array([0, 1, 0, 1])
-ys =np.array([0, 1, 1, 0])
-
-# centers
-
-mu1= np.array([0, 1])
-mu2= np.array([1, 0])
-w=end_to_end(x1, x2, ys, mu1, mu2)
-#testing
-
-print(f"Input: {np.array([0, 0])}, Predicted: {predict_matrix(np.array([0, 0]), w)}")
-print(f"Input: {np.array([0, 1])}, Predicted: {predict_matrix(np.array([0, 1]), w)}")
-print(f"Input: {np.array([1, 0])}, Predicted: {predict_matrix(np.array([1, 0]), w)}")
-print(f"Input: {np.array([1, 1])}, Predicted: {predict_matrix(np.array([1, 1]), w)}")
 ```
 
 <H3>OUTPUT:</H3>
